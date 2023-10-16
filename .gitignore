@@ -1,0 +1,5 @@
+.venv
+
+__pycache__
+
+PonziDataset_20221114.csv
