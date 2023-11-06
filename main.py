@@ -8,11 +8,14 @@ token_add="0x96184d9C811Ea0624fC30C80233B1d749B9E485B"
 # tx_df = eth_api.get_transfers(token_add)
 try:
     name, symbol = eth_api.get_token_name(token_add)
+    tdata= eth_api.get_transfers(token_add)
     # Convert the abnormal address to checksum address
     # checksum_address = Web3.toChecksumAddress(token_add)
 
     # print(f"{checksum_address} transfers collected")
     print(f"{symbol} transfers collected")
+
+    print(tdata)
 
     print(f"--------------------------------")
 

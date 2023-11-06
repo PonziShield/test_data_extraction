@@ -20,11 +20,7 @@ class ETH_API:
         contract = self.web3.eth.contract(address, abi=self.ABI)
         token_name = contract.functions.name().call()
         token_symbol = contract.functions.symbol().call()
-        op_code = contract.bytecode()
-
-        #get contract name
-        print(op_code)
-
+        
         # contract_name= contract.function
         # print(f"token name: {token_name}, token symbol: {token_symbol}, contract name: {contract_name}")
         return token_name, token_symbol
@@ -194,14 +190,14 @@ class ETH_API:
         except Exception as err:
             print(f"Exception occured: {err}")
             return
-        transfers, first_block = self.get_logs(contract, "Transfer", self.hash_log)
+        # transfers, first_block = self.get_logs(contract, "Transfer", self.hash_log)
         # transfers = get_logs(contract, "Transfer", hash_log2, start_block, end_block, number_batches=1)
 
         # Save txs in a Dataframe.
         txs = [[transaction['transactionHash'].hex(), transaction["blockNumber"], transaction["args"]['from'],
                 transaction["args"]['to'], transaction["args"]['value'] / 10 ** decimal] for transaction in transfers]
         #transfers = pd.DataFrame(txs, columns=["transactionHash", "block_number", "from", "to", "value"])
-        time_gas = self.collect_gas_time(token_address, first_block)
+        # time_gas = self.collect_gas_time(token_address, first_block)
         #hashes, times, gases = self.collect_gas_time(token_address)
         #transfers.to_csv(out_path + "/" + token_address + "tfs.csv", index=False)
         #time_gas.to_csv(out_path + "/" + token_address + "tgs.csv", index=False)
@@ -212,28 +208,28 @@ class ETH_API:
             print(f"len wrong {len(txs)} trasnactions, {len(times)} timestamps")
             return
         '''
-        ltx = len(txs)
-        print(f"ltx {ltx}")
-        lts = len(time_gas)
-        print(f"lts {lts}")
-        j=0
-        gas_tot = []
-        for i in range(ltx):
-            while(j<lts):
-                if time_gas['transactionHash'][j]==txs[i][0]:
-                    txs[i].append(time_gas['timestamp'][j])
-                    txs[i].append(time_gas['gas_price'][j])
-                    gas_tot.append(time_gas['gas_price'][j])
-                    j+=1
-                    break
-                j+=1
+        # ltx = len(txs)
+        # print(f"ltx {ltx}")
+        # lts = len(time_gas)
+        # print(f"lts {lts}")
+        # j=0
+        # gas_tot = []
+        # for i in range(ltx):
+        #     while(j<lts):
+        #         if time_gas['transactionHash'][j]==txs[i][0]:
+        #             txs[i].append(time_gas['timestamp'][j])
+        #             txs[i].append(time_gas['gas_price'][j])
+        #             gas_tot.append(time_gas['gas_price'][j])
+        #             j+=1
+        #             break
+        #         j+=1
             #txs[i].append(time_gas[i])
             #txs[i].append(gases[i])
 
         transfers = pd.DataFrame(txs, columns=["transactionHash", "block_number", "from", "to", "value", "timestamp", "gas_price"])
         #print(f"before {len(transfers)}")
         #transfers = transfers.dropna()
-        transfers = transfers.fillna(sum(gas_tot)/len(gas_tot))
+        # transfers = transfers.fillna(sum(gas_tot)/len(gas_tot))
         #print(f"after {len(transfers)}")
 
         #transfers.to_csv(out_path + "/" + token_address + ".csv", index=False)
