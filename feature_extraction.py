@@ -4,12 +4,34 @@ import csv
 # import re
 
 class ContractFeature(object):
-    def __init__(self, contract_address, ponzi_or_nonponzi):
+    def __init__(self, contract_address):
         self.contract_address = contract_address
-        self.ponzi_or_nonponzi = ponzi_or_nonponzi
+        # self.ponzi_or_nonponzi = ponzi_or_nonponzi
         self.file_name = self.contract_address + ".csv"
 
-        # features from transactions
+        # sequence of transactions features
+        self.seq_size = 10
+        self.sequence_of_transactions = {
+            "kr":[],
+            # "bal":[],
+            # "n_inv":[],
+            # "n_pay":[],
+            # "d_ind":[],
+            "pr":[],
+            "n_max":[],
+            "eth_inflow_external":[],
+            "eth_inflow_internal":[],
+            "eth_outflow_external":[],
+            "eth_outflow_internal":[],
+            "unique_incomming_addresses_internal":[],
+            "unique_incomming_addresses_external":[],
+            "unique_outgoing_addresses_internal":[],
+            "unique_outgoing_addresses_external":[],
+            "contract_total_transaction_count":[]
+
+        }
+
+        # -------------- chenz features from transactions ---------------------
         self.kr = 0.0  # known rate
         self.bal = 0.0  # balance
         self.n_inv = 0 # number of investment
@@ -17,10 +39,6 @@ class ContractFeature(object):
         self.d_ind = 0  # difference between counts of payment and investment
         self.pr = 0.0 # the proportion of investors who received at least one payment.
         self.n_max = 0.0 # the maximum of counts of payments to participants
-
-        # features from opcode
-        self.action_freq = {}
-        self.action_ratio = {}
 
         # local variables
         self.investors = {}  # format: {address: first_invest_timestamp}
@@ -30,12 +48,238 @@ class ContractFeature(object):
 
         self.get_kr_ninv_npay_pr_nmax()
         # self.get_balance()
+        self.get_d_ind() 
 
-        # self.get_d_ind()  # TODO
-        # self.get_action_frequency()  # get the frequency of each action in the opcode of a smart contract
+        # -------------- LSTM features for transactions ---------------------
+
+        self.eth_inflow_external = 0
+        self.eth_inflow_internal = 0
+        self.eth_outflow_external = 0
+        self.eth_outflow_internal = 0
+        self.get_eth_flow()
+
+        self.unique_incomming_addresses_internal={}
+        self.unique_incomming_addresses_external={}
+        self.unique_outgoing_addresses_internal={}
+        self.unique_outgoing_addresses_external={}
+        self.get_unique_addresses()
+
+        self.contract_total_transaction_count = 0
+        self.get_contract_total_transaction_count()
+
+        
+
+
+    def get_contract_total_transaction_count(self):
+        
+        with open('./data/internal_transactions/' + self.file_name, 'r') as in_tx_file:
+            internal_count = []
+            seq_counter = 0
+            locals_contract_total_transaction_count = 0
+            counter = 0
+            for in_tx in in_tx_file:
+                if counter > 0:
+                    from_address = in_tx.split(',')[3]
+                    to_address = in_tx.split(',')[4]
+
+                    if from_address == self.contract_address :
+                        self.contract_total_transaction_count += 1
+                        locals_contract_total_transaction_count += 1
+
+                    # seq creation
+                    if seq_counter == self.seq_size - 1:
+                        seq_counter = 0
+                        internal_count.append(locals_contract_total_transaction_count)
+                        locals_contract_total_transaction_count = 0
+                    else:
+                        seq_counter += 1
+                        
+
+                counter += 1
+
+        with open('./data/transactions/' + self.file_name, 'r') as tx_file:
+            external_count = []
+            seq_counter = 0
+            locals_contract_total_transaction_count = 0
+
+            counter = 0
+            for tx in tx_file:
+                if counter > 0:
+                    from_address = tx.split(',')[6]
+                    to_address = tx.split(',')[7]
+
+                    if from_address == self.contract_address:
+                        self.contract_total_transaction_count += 1
+
+                    # seq creation
+                    if seq_counter == self.seq_size - 1:
+                        seq_counter = 0
+                        external_count.append(locals_contract_total_transaction_count)
+                        locals_contract_total_transaction_count = 0
+                    else:
+                        seq_counter += 1
+                counter += 1
+
+        self.sequence_of_transactions["contract_total_transaction_count"]=list(map(sum, zip( self.addPaddings(internal_count), self.addPaddings(external_count)))) 
+        print('contract_total_transaction_count is {%d}' % self.contract_total_transaction_count)
+        # print('feature_sequence is {%s}' % result)
+    
+    def get_eth_flow(self):
+        with open('./data/internal_transactions/' + self.file_name, 'r') as in_tx_file:
+            seq_counter = 0
+            locals_eth_inflow_internal = 0
+            locals_eth_outflow_internal = 0
+            counter = 0
+            for in_tx in in_tx_file:
+                if counter > 0:
+                    fields = in_tx.split(',')
+                    eth_value = float(fields[5])
+                    from_address = fields[3]
+                    to_address = fields[4]
+
+                    if from_address == self.contract_address:
+                        self.eth_outflow_internal += eth_value
+                        locals_eth_outflow_internal += eth_value
+
+                    if to_address == self.contract_address:
+                        self.eth_inflow_internal += eth_value
+                        locals_eth_inflow_internal += eth_value
+
+                    if seq_counter == self.seq_size - 1:
+                        # print("^^^^^^^^^^")
+                        # print(locals_eth_inflow_internal)
+                        # print(locals_eth_outflow_internal)
+                        seq_counter = 0
+                        self.sequence_of_transactions["eth_inflow_internal"].append(locals_eth_inflow_internal)
+                        self.sequence_of_transactions["eth_outflow_internal"].append(locals_eth_outflow_internal)
+                        locals_eth_inflow_internal = 0
+                        locals_eth_outflow_internal = 0
+                    else:
+                        seq_counter += 1
+
+                counter += 1
+
+        with open('./data/transactions/' + self.file_name, 'r') as tx_file:
+            seq_counter = 0
+            locals_eth_inflow_external = 0
+            locals_eth_outflow_external = 0
+            counter = 0
+            for tx in tx_file:
+                if counter > 0:
+                    fields = tx.split(',')
+                    eth_value = float(fields[8])
+                    from_address = fields[6]
+                    to_address = fields[7]
+
+                    if from_address == self.contract_address:
+                        self.eth_outflow_external += eth_value
+                        locals_eth_outflow_external += eth_value
+                    if to_address == self.contract_address:
+                        self.eth_inflow_external += eth_value
+                        locals_eth_inflow_external += eth_value
+                    
+                    if seq_counter == self.seq_size - 1:
+                        seq_counter = 0
+                        self.sequence_of_transactions["eth_inflow_external"].append(locals_eth_inflow_external)
+                        self.sequence_of_transactions["eth_outflow_external"].append(locals_eth_outflow_external)
+                        locals_eth_inflow_external = 0
+                        locals_eth_outflow_external = 0
+                    else:
+                        seq_counter += 1
+
+                counter += 1
+        print('eth_inflow_external is {%f}' % self.eth_inflow_external)
+        print('eth_inflow_internal is {%f}' % self.eth_inflow_internal)
+        print('eth_outflow_external is {%f}' % self.eth_outflow_external)
+        print('eth_outflow_internal is {%f}' % self.eth_outflow_internal)
+
+
+    def get_unique_addresses(self):
+        with open('./data/internal_transactions/' + self.file_name, 'r') as in_tx_file:
+            seq_counter = 0
+            local_unique_incomming_addresses_internal = {}
+            local_unique_outgoing_addresses_internal = {}
+            counter = 0
+            for in_tx in in_tx_file:
+                if counter > 0:
+                    fields = in_tx.split(',')
+                    from_address = fields[3]
+                    to_address = fields[4]
+
+                    if to_address not in self.unique_outgoing_addresses_internal:
+                        self.unique_outgoing_addresses_internal[to_address] = 1
+                        local_unique_outgoing_addresses_internal[to_address] = 1
+
+                    else:
+                        self.unique_outgoing_addresses_internal[to_address] += 1
+                        local_unique_outgoing_addresses_internal[to_address] = 1
+
+                    if from_address not in self.unique_incomming_addresses_internal:
+                        self.unique_incomming_addresses_internal[from_address] = 1
+                        local_unique_incomming_addresses_internal[from_address] = 1
+                    else:
+                        self.unique_incomming_addresses_internal[from_address] += 1
+                        local_unique_incomming_addresses_internal[from_address] = 1
+
+                    if seq_counter == self.seq_size - 1:
+                        seq_counter = 0
+                        self.sequence_of_transactions["unique_incomming_addresses_internal"].append(len(local_unique_incomming_addresses_internal))
+                        self.sequence_of_transactions["unique_outgoing_addresses_internal"].append(len(local_unique_outgoing_addresses_internal))
+                        local_unique_incomming_addresses_internal = {}
+                        local_unique_outgoing_addresses_internal = {}
+                    else:
+                        seq_counter += 1
+
+                counter += 1
+
+        with open('./data/transactions/' + self.file_name, 'r') as tx_file:
+            counter = 0
+            seq_counter = 0
+            local_unique_incomming_addresses_external = {}
+            local_unique_outgoing_addresses_external = {}
+            for tx in tx_file:
+                if counter > 0:
+                    fields = tx.split(',')
+                    from_address = fields[6]
+                    to_address = fields[7]
+
+                    if to_address not in self.unique_outgoing_addresses_external:
+                        self.unique_outgoing_addresses_external[to_address] = 1
+                        local_unique_outgoing_addresses_external[to_address] = 1
+                    else:
+                        self.unique_outgoing_addresses_external[to_address] += 1
+                        local_unique_outgoing_addresses_external[to_address] = 1
+
+                    if from_address not in self.unique_incomming_addresses_external:
+                        self.unique_incomming_addresses_external[from_address] = 1
+                        local_unique_incomming_addresses_external[from_address] = 1
+                    else:
+                        self.unique_incomming_addresses_external[from_address] += 1
+                        local_unique_incomming_addresses_external[from_address] = 1
+
+                    if seq_counter == self.seq_size - 1:
+                        seq_counter = 0
+                        self.sequence_of_transactions["unique_incomming_addresses_external"].append(len(local_unique_incomming_addresses_external))
+                        self.sequence_of_transactions["unique_outgoing_addresses_external"].append(len(local_unique_outgoing_addresses_external))
+                        local_unique_incomming_addresses_external = {}
+                        local_unique_outgoing_addresses_external = {}
+                    else:
+                        seq_counter += 1
+
+                counter += 1
+        print('unique_incomming_addresses_external is {%d}' % len(self.unique_incomming_addresses_external))
+        print('unique_incomming_addresses_internal is {%d}' % len(self.unique_incomming_addresses_internal))
+        print('unique_outgoing_addresses_external is {%d}' % len(self.unique_outgoing_addresses_external))
+        print('unique_outgoing_addresses_internal is {%d}' % len(self.unique_outgoing_addresses_internal))
+
+
 
     def get_kr_ninv_npay_pr_nmax(self):
+        investors_list = []  # format: {address: first_invest_timestamp}
+        receivers_list = []  # format: {address: first_payment timestamp}
         with open('./data/transactions/' + self.file_name, 'r') as tx_file:
+            seq_counter = 0
+            local_investors={}
             counter = 0
             for tx in tx_file:
                 if counter > 0:
@@ -55,12 +299,34 @@ class ContractFeature(object):
                     else:
                         self.investment_count[from_address] += 1
 
+                    
+                    
+                    # seq creation
+                    if from_address not in local_investors:
+                        local_investors[from_address] = invest_timestamp
+                    else:
+                        if invest_timestamp < local_investors[from_address]:
+                            local_investors[from_address] = invest_timestamp
+
+
+                    if seq_counter == self.seq_size - 1:
+                        seq_counter = 0
+                        investors_list.append(local_investors)
+                        local_investors = {}
+                    else:
+                        seq_counter += 1
+
+
                 counter += 1
+
             self.n_inv = counter - 1
-            print(self.investors)
+            # print(self.investors)
             print('n_inv is {%d}' % self.n_inv)
 
         with open('./data/internal_transactions/' +  self.file_name, 'r') as in_tx_file:
+            seq_counter = 0
+            local_receivers={}
+
             counter = 0
             for in_tx in in_tx_file:
                 if counter > 0:
@@ -70,6 +336,7 @@ class ContractFeature(object):
 
                     if to_address not in self.receivers:
                         self.receivers[to_address] = pay_timestamp
+
                     else:
                         if pay_timestamp < self.receivers[to_address]:
                             self.receivers[to_address] = pay_timestamp
@@ -79,13 +346,31 @@ class ContractFeature(object):
                     else:
                         self.payment_counts[to_address] += 1
 
+                    # seq creation
+                    if to_address not in local_receivers:
+                        local_receivers[to_address] = pay_timestamp
+                    else:
+                        if pay_timestamp < local_receivers[to_address]:
+                            local_receivers[to_address] = pay_timestamp
+
+                    if seq_counter == self.seq_size - 1:
+                        seq_counter = 0
+                        receivers_list.append(local_receivers)
+                        local_receivers = {}
+                    else:
+                        seq_counter += 1
+
                 counter += 1
             self.n_pay = counter - 1
             payment_count_list = [self.payment_counts[address] for address in self.receivers]
             self.n_max = max(payment_count_list) if len(payment_count_list) > 0 else 0
             print('n_max is {%d}' % self.n_max)
-            print(self.receivers)
+            # print(self.receivers)
             print('n_pay is {%d}' % self.n_pay)
+
+            # print('--------------')
+            # print("inv",len(investors_list))
+            # print("rec",receivers_list)
 
         pay_after_investment_counter = 0
         for address in self.receivers:
@@ -100,6 +385,26 @@ class ContractFeature(object):
                 get_paid_investors_counter += 1
         self.pr = get_paid_investors_counter / len(self.receivers) if len(self.receivers) > 0 else 0
         print('pr is {%f}' % self.pr)
+
+        # seq creation
+        for i in range(len(investors_list)):
+            investors = investors_list[i]
+            receivers = receivers_list[i]
+
+            pay_after_investment_counter = 0
+            for address in receivers:
+                if address in investors and receivers[address] > investors[address]:
+                    pay_after_investment_counter += 1
+            kr = pay_after_investment_counter / len(receivers) if len(receivers) > 0 else 0
+            self.sequence_of_transactions["kr"].append(kr)
+
+            get_paid_investors_counter = 0
+            for address in investors:
+                if address in receivers:
+                    get_paid_investors_counter += 1
+            pr = get_paid_investors_counter / len(receivers) if len(receivers) > 0 else 0
+            self.sequence_of_transactions["pr"].append(pr)
+        
 
     # get the balance of a tx from the file flaged.csv
     def get_balance(self):
@@ -134,9 +439,14 @@ class ContractFeature(object):
             std_of_v_list = stdev(v_list)
             skewness = 3 * (mean_of_v_list - median_of_v_list) / (std_of_v_list) if std_of_v_list != 0 else 0
             self.d_ind = skewness
+        print('d_ind is {%f}' % self.d_ind)
 
+    def addPaddings(self,ar1):
+        if len(ar1) < self.seq_size:
+            return  ar1 + [0] * (self.seq_size - len(ar1))
+        return ar1
 
 if __name__ == '__main__':
 
     # read ponzi_Contracts.csv and non_ponziContracts.csv file and find the balance of each contract by looking into
-    contractFeature = ContractFeature('0xD79B4C6791784184e2755B2fC1659eaaB0f80456', 'nonponzi')
+    contractFeature = ContractFeature('0xD79B4C6791784184e2755B2fC1659eaaB0f80456')
