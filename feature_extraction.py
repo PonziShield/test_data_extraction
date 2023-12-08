@@ -10,7 +10,8 @@ class ContractFeature(object):
         self.file_name = self.contract_address + ".csv"
 
         # sequence of transactions features
-        self.seq_size = 10
+        self.seq_size = 20
+        self.tot_transactions = 100
         self.sequence_of_transactions = {
             "kr":[],
             # "bal":[],
@@ -18,7 +19,7 @@ class ContractFeature(object):
             # "n_pay":[],
             # "d_ind":[],
             "pr":[],
-            "n_max":[],
+            # "n_max":[],
             "eth_inflow_external":[],
             "eth_inflow_internal":[],
             "eth_outflow_external":[],
@@ -129,6 +130,8 @@ class ContractFeature(object):
             seq_counter = 0
             locals_eth_inflow_internal = 0
             locals_eth_outflow_internal = 0
+            eth_inflow_internal=[]
+            eth_outflow_internal=[]
             counter = 0
             for in_tx in in_tx_file:
                 if counter > 0:
@@ -150,8 +153,8 @@ class ContractFeature(object):
                         # print(locals_eth_inflow_internal)
                         # print(locals_eth_outflow_internal)
                         seq_counter = 0
-                        self.sequence_of_transactions["eth_inflow_internal"].append(locals_eth_inflow_internal)
-                        self.sequence_of_transactions["eth_outflow_internal"].append(locals_eth_outflow_internal)
+                        eth_inflow_internal.append(locals_eth_inflow_internal)
+                        eth_outflow_internal.append(locals_eth_outflow_internal)
                         locals_eth_inflow_internal = 0
                         locals_eth_outflow_internal = 0
                     else:
@@ -159,10 +162,15 @@ class ContractFeature(object):
 
                 counter += 1
 
+        self.sequence_of_transactions["eth_inflow_internal"]=self.addPaddings(eth_inflow_internal)
+        self.sequence_of_transactions["eth_outflow_internal"]=self.addPaddings(eth_outflow_internal)
+
         with open('./data/transactions/' + self.file_name, 'r') as tx_file:
             seq_counter = 0
             locals_eth_inflow_external = 0
             locals_eth_outflow_external = 0
+            eth_inflow_external=[]
+            eth_outflow_external=[]
             counter = 0
             for tx in tx_file:
                 if counter > 0:
@@ -180,14 +188,18 @@ class ContractFeature(object):
                     
                     if seq_counter == self.seq_size - 1:
                         seq_counter = 0
-                        self.sequence_of_transactions["eth_inflow_external"].append(locals_eth_inflow_external)
-                        self.sequence_of_transactions["eth_outflow_external"].append(locals_eth_outflow_external)
+                        eth_inflow_external.append(locals_eth_inflow_external)
+                        eth_outflow_external.append(locals_eth_outflow_external)
                         locals_eth_inflow_external = 0
                         locals_eth_outflow_external = 0
                     else:
                         seq_counter += 1
 
                 counter += 1
+            
+        self.sequence_of_transactions["eth_inflow_external"]=self.addPaddings(eth_inflow_external)
+        self.sequence_of_transactions["eth_outflow_external"]=self.addPaddings(eth_outflow_external)
+        
         print('eth_inflow_external is {%f}' % self.eth_inflow_external)
         print('eth_inflow_internal is {%f}' % self.eth_inflow_internal)
         print('eth_outflow_external is {%f}' % self.eth_outflow_external)
@@ -199,6 +211,8 @@ class ContractFeature(object):
             seq_counter = 0
             local_unique_incomming_addresses_internal = {}
             local_unique_outgoing_addresses_internal = {}
+            unique_incomming_addresses_internal=[]
+            unique_outgoing_addresses_internal=[]
             counter = 0
             for in_tx in in_tx_file:
                 if counter > 0:
@@ -223,20 +237,25 @@ class ContractFeature(object):
 
                     if seq_counter == self.seq_size - 1:
                         seq_counter = 0
-                        self.sequence_of_transactions["unique_incomming_addresses_internal"].append(len(local_unique_incomming_addresses_internal))
-                        self.sequence_of_transactions["unique_outgoing_addresses_internal"].append(len(local_unique_outgoing_addresses_internal))
+                        unique_incomming_addresses_internal.append(len(local_unique_incomming_addresses_internal))
+                        unique_outgoing_addresses_internal.append(len(local_unique_outgoing_addresses_internal))
                         local_unique_incomming_addresses_internal = {}
                         local_unique_outgoing_addresses_internal = {}
                     else:
                         seq_counter += 1
 
                 counter += 1
+            
+            self.sequence_of_transactions["unique_incomming_addresses_internal"]=self.addPaddings(unique_incomming_addresses_internal)
+            self.sequence_of_transactions["unique_outgoing_addresses_internal"]=self.addPaddings(unique_outgoing_addresses_internal)
 
         with open('./data/transactions/' + self.file_name, 'r') as tx_file:
             counter = 0
             seq_counter = 0
             local_unique_incomming_addresses_external = {}
             local_unique_outgoing_addresses_external = {}
+            unique_incomming_addresses_external=[]
+            unique_outgoing_addresses_external=[]
             for tx in tx_file:
                 if counter > 0:
                     fields = tx.split(',')
@@ -259,14 +278,17 @@ class ContractFeature(object):
 
                     if seq_counter == self.seq_size - 1:
                         seq_counter = 0
-                        self.sequence_of_transactions["unique_incomming_addresses_external"].append(len(local_unique_incomming_addresses_external))
-                        self.sequence_of_transactions["unique_outgoing_addresses_external"].append(len(local_unique_outgoing_addresses_external))
+                        unique_incomming_addresses_external.append(len(local_unique_incomming_addresses_external))
+                        unique_outgoing_addresses_external.append(len(local_unique_outgoing_addresses_external))
                         local_unique_incomming_addresses_external = {}
                         local_unique_outgoing_addresses_external = {}
                     else:
                         seq_counter += 1
-
                 counter += 1
+            
+            self.sequence_of_transactions["unique_incomming_addresses_external"]=self.addPaddings(unique_incomming_addresses_external)
+            self.sequence_of_transactions["unique_outgoing_addresses_external"]=self.addPaddings(unique_outgoing_addresses_external)
+
         print('unique_incomming_addresses_external is {%d}' % len(self.unique_incomming_addresses_external))
         print('unique_incomming_addresses_internal is {%d}' % len(self.unique_incomming_addresses_internal))
         print('unique_outgoing_addresses_external is {%d}' % len(self.unique_outgoing_addresses_external))
@@ -387,6 +409,10 @@ class ContractFeature(object):
         print('pr is {%f}' % self.pr)
 
         # seq creation
+        investors_list=self.addPaddingsSet(investors_list)
+        receivers_list=self.addPaddingsSet(receivers_list)
+        # print("inv",(investors_list))
+        # print("rec",(receivers_list))
         for i in range(len(investors_list)):
             investors = investors_list[i]
             receivers = receivers_list[i]
@@ -442,8 +468,15 @@ class ContractFeature(object):
         print('d_ind is {%f}' % self.d_ind)
 
     def addPaddings(self,ar1):
-        if len(ar1) < self.seq_size:
-            return  ar1 + [0] * (self.seq_size - len(ar1))
+        if len(ar1) < self.tot_transactions//self.seq_size:
+            return  ar1 + [0] * (self.tot_transactions//self.seq_size - len(ar1))
+        return ar1
+    
+    def addPaddingsSet(self,ar1):
+        if len(ar1) < self.tot_transactions//self.seq_size:
+            for i in range(self.tot_transactions//self.seq_size - len(ar1)):
+                ar1.append({})
+            return  ar1
         return ar1
 
 if __name__ == '__main__':
