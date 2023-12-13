@@ -10,8 +10,8 @@ class ContractFeature(object):
         self.file_name = self.contract_address + ".csv"
 
         # sequence of transactions features
-        self.seq_size = 20
-        self.tot_transactions = 100
+        self.seq_size = 10
+        self.tot_transactions = 1080
         self.sequence_of_transactions = {
             "kr":[],
             # "bal":[],

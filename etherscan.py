@@ -10,7 +10,7 @@ class ETH_API:
         self.action = "txlist"
         self.api_key = api_key
         self.ponzi_contract_list=ponzi_contract_list
-        self.transaction_limit = 100
+        self.transaction_limit = 1080
 
     def get_transactions_count(self,address):
 

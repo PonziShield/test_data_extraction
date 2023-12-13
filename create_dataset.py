@@ -3,6 +3,7 @@ import pandas as pd
 
 from feature_extraction import *
 from etherscan import *
+import numpy as np
 
 
 class CreateDataset:
@@ -53,6 +54,37 @@ class CreateDataset:
 
         print(f'Data has been written to {filename}.')
 
+    def create_numpy_array(self):
+        all_data = []
+        all_labels = []
+        filtered_df = self.filtered_df
+        for i in range(len(filtered_df)):
+            
+            if i>self.no_of_files:
+                break
+            
+            # print(filtered_df.loc[i, "address"], filtered_df.loc[i, "label"])
+            fileNameToRead = './data/data_set/' + filtered_df.loc[i, "address"] + '.csv'
+
+            data = pd.read_csv(fileNameToRead)
+
+            # Extract the relevant data (assuming the label column is named 'label')
+            features = data.iloc[:, :11].to_numpy()
+            label = data['label'][1]
+            # print(features[1], labels[1])
+
+            all_data.append((features))
+            all_labels.append(label)
+            # print("-----------------------------------------------------------------------")
+
+        data_array = np.array(all_data)
+        labels_array = np.array(all_labels)
+
+        print(data_array.shape)
+        print(labels_array.shape)
+        # Save the numpy array to a file (e.g., npy or npz format)
+        np.save('./data/other/data.npy' , data_array)
+        np.save('./data/other/labels.npy' , labels_array)
 
                     
 
