@@ -90,40 +90,40 @@ class ETH_API:
                 with open(fileNameToSave, 'w',  newline='') as f:
                     f.write(" ")
 
-            results = self.get_last_x_transactions(contratAddress)
-            fieldnames = ['blockNumber', 'blockHash', 'timeStamp', 'hash', 'nonce', 'transactionIndex', 'from', 'to', 'value',
-                          'gas', 'gasPrice', 'input', 'contractAddress', 'cumulativeGasUsed', 'gasUsed', 'confirmations', 'isError']
-            with open(fileNameToSave, mode='w',  newline='') as csv_file:
-                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-                writer.writeheader()
-                if results != 0:
-                    for result in results:
-                        # result['input'] = ''
-                        # # print(result)
-                        # writer.writerow(result)
-                        transaction_data = {
-                        'blockNumber': result['blockNumber'],
-                        'blockHash': result['blockHash'],
-                        'timeStamp': result['timeStamp'],
-                        'hash': result['hash'],
-                        'nonce': result['nonce'],
-                        'transactionIndex': result['transactionIndex'],
-                        'from': result['from'],
-                        'to': result['to'],
-                        'value': result['value'],
-                        'gas': result['gas'],
-                        'gasPrice': result['gasPrice'],
-                        'input': result['input'],
-                        'contractAddress': result['contractAddress'],
-                        'cumulativeGasUsed': result['cumulativeGasUsed'],
-                        'gasUsed': result['gasUsed'],
-                        'confirmations': result['confirmations'],
-                        'isError': result['isError']
-                        }
-                        writer.writerow(transaction_data)
-                    counter += 1
-            # if counter % 500 == 0 and counter > 0:
-            print('{0} transactions have downloaded...'.format(counter))
+                results = self.get_last_x_transactions(contratAddress)
+                fieldnames = ['blockNumber', 'blockHash', 'timeStamp', 'hash', 'nonce', 'transactionIndex', 'from', 'to', 'value',
+                            'gas', 'gasPrice', 'input', 'contractAddress', 'cumulativeGasUsed', 'gasUsed', 'confirmations', 'isError']
+                with open(fileNameToSave, mode='w',  newline='') as csv_file:
+                    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                    writer.writeheader()
+                    if results != 0:
+                        for result in results:
+                            # result['input'] = ''
+                            # # print(result)
+                            # writer.writerow(result)
+                            transaction_data = {
+                            'blockNumber': result['blockNumber'],
+                            'blockHash': result['blockHash'],
+                            'timeStamp': result['timeStamp'],
+                            'hash': result['hash'],
+                            'nonce': result['nonce'],
+                            'transactionIndex': result['transactionIndex'],
+                            'from': result['from'],
+                            'to': result['to'],
+                            'value': result['value'],
+                            'gas': result['gas'],
+                            'gasPrice': result['gasPrice'],
+                            'input': result['input'],
+                            'contractAddress': result['contractAddress'],
+                            'cumulativeGasUsed': result['cumulativeGasUsed'],
+                            'gasUsed': result['gasUsed'],
+                            'confirmations': result['confirmations'],
+                            'isError': result['isError']
+                            }
+                            writer.writerow(transaction_data)
+                        counter += 1
+                # if counter % 500 == 0 and counter > 0:
+                print('{0} transactions have downloaded...'.format(counter))
         print('ponzi transactions downloading is over.')
         return True
     
@@ -136,39 +136,39 @@ class ETH_API:
                 with open(fileNameToSave, 'w',  newline='') as f:
                     f.write(" ")
 
-            results = self.get_last_x_internal_transactions(contratAddress)
-            fieldnames = ['blockNumber', 'timeStamp', 'hash', 'from', 'to', 'value',
-                          'contractAddress', 'input', 'type', 'gas', 'gasUsed', 'traceId', 'isError', 'errCode']
-            with open(fileNameToSave, mode='w',  newline='') as csv_file:
-                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-                writer.writeheader()
-                if results != 0:
-                    for result in results:
-                        # result['input'] = ''
-                        # # print(result)
-                        # writer.writerow(result)
-                        transaction_data = {
-                        'blockNumber': result['blockNumber'],
-                        # 'blockHash': result['blockHash'],
-                        'timeStamp': result['timeStamp'],
-                        'hash': result['hash'],
-                        # 'nonce': result['nonce'],
-                        # 'transactionIndex': result['transactionIndex'],
-                        'from': result['from'],
-                        'to': result['to'],
-                        'value': result['value'],
-                        'contractAddress': result['contractAddress'],
-                        'input': result['input'],
-                        'type': result['type'],
-                        'gas': result['gas'],
-                        'gasUsed': result['gasUsed'],
-                        'traceId': result['traceId'],
-                        'isError': result['isError'],
-                        'errCode': result['errCode']
-                        }
-                        writer.writerow(transaction_data)
-                    counter += 1
-            # if counter % 500 == 0 and counter > 0:
-            print('{0} transactions have downloaded...'.format(counter))
+                results = self.get_last_x_internal_transactions(contratAddress)
+                fieldnames = ['blockNumber', 'timeStamp', 'hash', 'from', 'to', 'value',
+                            'contractAddress', 'input', 'type', 'gas', 'gasUsed', 'traceId', 'isError', 'errCode']
+                with open(fileNameToSave, mode='w',  newline='') as csv_file:
+                    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                    writer.writeheader()
+                    if results != 0:
+                        for result in results:
+                            # result['input'] = ''
+                            # # print(result)
+                            # writer.writerow(result)
+                            transaction_data = {
+                            'blockNumber': result['blockNumber'],
+                            # 'blockHash': result['blockHash'],
+                            'timeStamp': result['timeStamp'],
+                            'hash': result['hash'],
+                            # 'nonce': result['nonce'],
+                            # 'transactionIndex': result['transactionIndex'],
+                            'from': result['from'],
+                            'to': result['to'],
+                            'value': result['value'],
+                            'contractAddress': result['contractAddress'],
+                            'input': result['input'],
+                            'type': result['type'],
+                            'gas': result['gas'],
+                            'gasUsed': result['gasUsed'],
+                            'traceId': result['traceId'],
+                            'isError': result['isError'],
+                            'errCode': result['errCode']
+                            }
+                            writer.writerow(transaction_data)
+                        counter += 1
+                # if counter % 500 == 0 and counter > 0:
+                print('{0} transactions have downloaded...'.format(counter))
         print('ponzi transactions downloading is over.')
         return True
